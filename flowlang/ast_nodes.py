@@ -26,6 +26,18 @@ class WhenStatement(ASTNode):
 
 
 @dataclass
+class VarDeclaration(ASTNode):
+    name: str
+    init: ASTNode | None = None
+
+
+@dataclass
+class LoopStatement(ASTNode):
+    condition: ASTNode
+    body: list[ASTNode]
+
+
+@dataclass
 class PrintStatement(ASTNode):
     expression: ASTNode
 
@@ -43,6 +55,16 @@ class Number(ASTNode):
 
 
 @dataclass
+class String(ASTNode):
+    value: str
+
+
+@dataclass
+class Boolean(ASTNode):
+    value: bool
+
+
+@dataclass
 class Identifier(ASTNode):
     name: str
 
@@ -52,6 +74,8 @@ def ast_to_dict(node: ASTNode) -> Any:
         return {"type": "Program", "statements": [ast_to_dict(stmt) for stmt in node.statements]}
     if isinstance(node, Assignment):
         return {"type": "Assignment", "name": node.name, "expression": ast_to_dict(node.expression)}
+    if isinstance(node, VarDeclaration):
+        return {"type": "VarDeclaration", "name": node.name, "init": ast_to_dict(node.init) if node.init is not None else None}
     if isinstance(node, WhenStatement):
         return {
             "type": "WhenStatement",
@@ -60,6 +84,12 @@ def ast_to_dict(node: ASTNode) -> Any:
         }
     if isinstance(node, PrintStatement):
         return {"type": "PrintStatement", "expression": ast_to_dict(node.expression)}
+    if isinstance(node, LoopStatement):
+        return {
+            "type": "LoopStatement",
+            "condition": ast_to_dict(node.condition),
+            "body": [ast_to_dict(stmt) for stmt in node.body],
+        }
     if isinstance(node, BinaryOperation):
         return {
             "type": "BinaryOperation",
@@ -69,6 +99,10 @@ def ast_to_dict(node: ASTNode) -> Any:
         }
     if isinstance(node, Number):
         return {"type": "Number", "value": node.value}
+    if isinstance(node, String):
+        return {"type": "String", "value": node.value}
+    if isinstance(node, Boolean):
+        return {"type": "Boolean", "value": node.value}
     if isinstance(node, Identifier):
         return {"type": "Identifier", "name": node.name}
     return {"type": node.__class__.__name__}

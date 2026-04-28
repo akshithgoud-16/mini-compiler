@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .ast_nodes import Assignment, BinaryOperation, Identifier, Number, PrintStatement, Program, WhenStatement
+from .ast_nodes import (
+    Assignment,
+    BinaryOperation,
+    Identifier,
+    Number,
+    PrintStatement,
+    Program,
+    WhenStatement,
+    VarDeclaration,
+    LoopStatement,
+    String,
+    Boolean,
+)
 
 
 @dataclass
@@ -57,6 +69,13 @@ class IRGenerator:
         return IRProgram(self.instructions)
 
     def emit_statement(self, node) -> None:
+        if isinstance(node, VarDeclaration):
+            if node.init is not None:
+                value = self.emit_expression(node.init)
+            else:
+                value = "0"
+            self.instructions.append(IRInstruction(op="ASSIGN", result=node.name, arg1=value))
+            return
         if isinstance(node, Assignment):
             value = self.emit_expression(node.expression)
             self.instructions.append(IRInstruction(op="ASSIGN", result=node.name, arg1=value))
@@ -76,11 +95,29 @@ class IRGenerator:
                 self.emit_statement(statement)
             self.instructions.append(IRInstruction(op="LABEL", label=end_label))
             return
+        if isinstance(node, LoopStatement):
+            start_label = self.new_label()
+            true_label = self.new_label()
+            end_label = self.new_label()
+            self.instructions.append(IRInstruction(op="LABEL", label=start_label))
+            condition_value = self.emit_expression(node.condition)
+            self.instructions.append(IRInstruction(op="IF_GOTO", arg1=condition_value, label=true_label))
+            self.instructions.append(IRInstruction(op="GOTO", label=end_label))
+            self.instructions.append(IRInstruction(op="LABEL", label=true_label))
+            for statement in node.body:
+                self.emit_statement(statement)
+            self.instructions.append(IRInstruction(op="GOTO", label=start_label))
+            self.instructions.append(IRInstruction(op="LABEL", label=end_label))
+            return
         raise TypeError(f"Unsupported AST node: {node.__class__.__name__}")
 
     def emit_expression(self, node) -> str:
         if isinstance(node, Number):
             return str(node.value)
+        if isinstance(node, String):
+            return repr(node.value)
+        if isinstance(node, Boolean):
+            return str(int(node.value))
         if isinstance(node, Identifier):
             return node.name
         if isinstance(node, BinaryOperation):

@@ -1,6 +1,8 @@
-x -> 10
-y -> 20
-folded -> 10 + 20
-z -> x + y
+start
+number x -> 10
+number y -> 20
+number folded -> 10 + 20
+number z -> x + y
 when z > 15:
-say z
+	say z
+end

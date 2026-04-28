@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .ast_nodes import Assignment, BinaryOperation, Identifier, Number, PrintStatement, Program, WhenStatement
+from .ast_nodes import (
+    Assignment,
+    BinaryOperation,
+    Identifier,
+    Number,
+    PrintStatement,
+    Program,
+    WhenStatement,
+    VarDeclaration,
+    LoopStatement,
+    String,
+    Boolean,
+)
 from .ir import IRProgram
 
 
@@ -40,6 +52,9 @@ class CodeGenerator:
 
     def _emit_python_statement(self, node, indent_level: int) -> list[str]:
         indent = "    " * indent_level
+        if isinstance(node, VarDeclaration):
+            init = node.init if node.init is not None else Number(0)
+            return [f"{indent}{node.name} = {self._emit_python_expression(init)}"]
         if isinstance(node, Assignment):
             return [f"{indent}{node.name} = {self._emit_python_expression(node.expression)}"]
         if isinstance(node, PrintStatement):
@@ -49,11 +64,20 @@ class CodeGenerator:
             for statement in node.body:
                 lines.extend(self._emit_python_statement(statement, indent_level + 1))
             return lines
+        if isinstance(node, LoopStatement):
+            lines = [f"{indent}while {self._emit_python_expression(node.condition)}:"]
+            for statement in node.body:
+                lines.extend(self._emit_python_statement(statement, indent_level + 1))
+            return lines
         raise TypeError(f"Unsupported statement type: {type(node).__name__}")
 
     def _emit_python_expression(self, node) -> str:
         if isinstance(node, Number):
             return str(int(node.value)) if isinstance(node.value, float) and node.value.is_integer() else str(node.value)
+        if isinstance(node, String):
+            return repr(node.value)
+        if isinstance(node, Boolean):
+            return "True" if node.value else "False"
         if isinstance(node, Identifier):
             return node.name
         if isinstance(node, BinaryOperation):
@@ -70,4 +94,12 @@ class CodeGenerator:
             "/": "DIV",
             ">": "CMP_GT",
             "<": "CMP_LT",
+            ">=": "CMP_GE",
+            "<=": "CMP_LE",
+            "==": "CMP_EQ",
+            "!=": "CMP_NE",
+            "%": "MOD",
+            "**": "POW",
+            "&&": "AND",
+            "||": "OR",
         }[operator]

@@ -2,7 +2,19 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .ast_nodes import Assignment, BinaryOperation, Identifier, Number, PrintStatement, Program, WhenStatement
+from .ast_nodes import (
+    Assignment,
+    BinaryOperation,
+    Identifier,
+    Number,
+    PrintStatement,
+    Program,
+    WhenStatement,
+    VarDeclaration,
+    LoopStatement,
+    String,
+    Boolean,
+)
 
 
 class SemanticError(Exception):
@@ -20,11 +32,22 @@ class SemanticAnalyzer:
             self.visit(statement)
 
     def visit(self, node) -> None:
-        if isinstance(node, Assignment):
-            self.visit_expression(node.expression)
+        if isinstance(node, VarDeclaration):
+            if node.init is not None:
+                self.visit_expression(node.init)
             self.symbols[node.name] = 1
             return
+        if isinstance(node, Assignment):
+            if node.name not in self.symbols:
+                raise SemanticError(f"Variable '{node.name}' assigned before declaration")
+            self.visit_expression(node.expression)
+            return
         if isinstance(node, WhenStatement):
+            self.visit_expression(node.condition)
+            for statement in node.body:
+                self.visit(statement)
+            return
+        if isinstance(node, LoopStatement):
             self.visit_expression(node.condition)
             for statement in node.body:
                 self.visit(statement)
@@ -37,6 +60,10 @@ class SemanticAnalyzer:
     def visit_expression(self, node) -> None:
         if isinstance(node, Number):
             return
+        if isinstance(node, String):
+            return
+        if isinstance(node, Boolean):
+            return
         if isinstance(node, Identifier):
             if node.name not in self.symbols:
                 raise SemanticError(f"Variable '{node.name}' used before declaration")
@@ -44,7 +71,7 @@ class SemanticAnalyzer:
         if isinstance(node, BinaryOperation):
             self.visit_expression(node.left)
             self.visit_expression(node.right)
-            if node.operator not in {"+", "-", "*", "/", ">", "<"}:
+            if node.operator not in {"+", "-", "*", "/", ">", "<", ">=", "<=", "==", "!=", "%", "**", "&&", "||"}:
                 raise SemanticError(f"Invalid operator '{node.operator}'")
             return
         raise SemanticError(f"Invalid expression node: {node.__class__.__name__}")

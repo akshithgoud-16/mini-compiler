@@ -15,7 +15,7 @@ class Optimizer:
         for instruction in ir_program.instructions:
             if instruction.op == "BINARY" and instruction.arg1 is not None and instruction.arg2 is not None:
                 operator, right_operand = instruction.arg2.split(" ", 1)
-                if instruction.arg1.isdigit() and right_operand.isdigit():
+                if instruction.arg1.lstrip('-').isdigit() and right_operand.lstrip('-').isdigit():
                     left_value = int(instruction.arg1)
                     right_value = int(right_operand)
                     result = self.fold_constants(left_value, operator, right_value)
@@ -40,4 +40,20 @@ class Optimizer:
             return int(left > right)
         if operator == "<":
             return int(left < right)
+        if operator == ">=":
+            return int(left >= right)
+        if operator == "<=":
+            return int(left <= right)
+        if operator == "==":
+            return int(left == right)
+        if operator == "!=":
+            return int(left != right)
+        if operator == "%":
+            return left % right
+        if operator == "**":
+            return left ** right
+        if operator == "&&":
+            return int(bool(left) and bool(right))
+        if operator == "||":
+            return int(bool(left) or bool(right))
         raise ValueError(f"Unsupported operator '{operator}'")

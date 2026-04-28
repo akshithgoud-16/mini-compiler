@@ -13,12 +13,15 @@ class Lexer:
     """Turn source text into a token stream using regular expressions."""
 
     token_specification = [
-        ("NUMBER", r"\d+"),
+        ("NUMBER", r"\d+(?:\.\d+)?"),
+        ("STRING", r'"([^"\\]|\\.)*"'),
         ("ARROW", r"->"),
-        ("OP", r"[+\-*/><]"),
+        ("OP", r"==|!=|>=|<=|&&|\|\||\*\*|[+\-*/%><=]"),
+        ("SEMI", r";"),
         ("COLON", r":"),
         ("NEWLINE", r"\n"),
         ("SKIP", r"[ \t]+"),
+        ("COMMENT", r"#.*"),
         ("ID", r"[A-Za-z_][A-Za-z0-9_]*"),
         ("MISMATCH", r".")
     ]
@@ -39,10 +42,14 @@ class Lexer:
 
             if kind == "NUMBER":
                 tokens.append(Token("NUMBER", value, line, column))
+            elif kind == "STRING":
+                tokens.append(Token("STRING", value[1:-1], line, column))
             elif kind == "ARROW":
                 tokens.append(Token("ARROW", value, line, column))
             elif kind == "OP":
                 tokens.append(Token("OP", value, line, column))
+            elif kind == "SEMI":
+                tokens.append(Token("STOP", value, line, column))
             elif kind == "COLON":
                 tokens.append(Token("COLON", value, line, column))
             elif kind == "NEWLINE":
@@ -50,6 +57,8 @@ class Lexer:
                 line += 1
                 line_start = match.end()
             elif kind == "SKIP":
+                continue
+            elif kind == "COMMENT":
                 continue
             elif kind == "ID":
                 token_type = KEYWORDS.get(value, "ID")
