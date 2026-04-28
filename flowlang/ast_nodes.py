@@ -43,6 +43,12 @@ class PrintStatement(ASTNode):
 
 
 @dataclass
+class AskStatement(ASTNode):
+    name: str
+    prompt: String | None = None
+
+
+@dataclass
 class BinaryOperation(ASTNode):
     left: ASTNode
     operator: str
@@ -84,6 +90,8 @@ def ast_to_dict(node: ASTNode) -> Any:
         }
     if isinstance(node, PrintStatement):
         return {"type": "PrintStatement", "expression": ast_to_dict(node.expression)}
+    if isinstance(node, AskStatement):
+        return {"type": "AskStatement", "name": node.name, "prompt": ast_to_dict(node.prompt) if node.prompt is not None else None}
     if isinstance(node, LoopStatement):
         return {
             "type": "LoopStatement",

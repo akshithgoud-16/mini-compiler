@@ -1,0 +1,9 @@
+START
+number n
+ask "Enter n: " -> n
+number i -> 0
+loop i < n:
+    i -> i + 1
+when n > 0:
+    say n
+END

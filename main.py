@@ -5,6 +5,7 @@ import sys
 import io
 import contextlib
 import traceback
+import textwrap
 
 from flowlang.compiler import FlowLangCompiler
 from flowlang.lexer import LexerError
@@ -79,36 +80,50 @@ def main() -> int:
     except (LexerError, ParserError, SemanticError, ZeroDivisionError) as exc:
         print(f"Compilation failed: {exc}")
         return 1
+    def print_box(title: str, content: str, width: int = 88) -> None:
+        lines = []
+        lines.append("+" + "-" * (width - 2) + "+")
+        title_line = f" {title} "
+        lines.append("|" + title_line.center(width - 2) + "|")
+        lines.append("+" + "=" * (width - 2) + "+")
+        if content is None or str(content).strip() == "":
+            content_lines = ["(no content)"]
+        else:
+            raw_lines = str(content).splitlines()
+            # If content already looks like a table (lines starting with '|'), keep columns intact
+            content_lines = []
+            if any(rl.strip().startswith("|") for rl in raw_lines):
+                for rl in raw_lines:
+                    # remove leading/trailing pipe for clean placement but keep internal pipes
+                    inner = rl.strip()
+                    if inner.startswith("|") and inner.endswith("|"):
+                        inner = inner[1:-1]
+                    content_lines.append(inner.strip())
+            else:
+                for rl in raw_lines:
+                    wrapped = textwrap.wrap(rl, width=width - 4) or [""]
+                    for w in wrapped:
+                        content_lines.append(w)
+        for cl in content_lines:
+            lines.append("| " + cl.ljust(width - 4) + " |")
+        lines.append("+" + "-" * (width - 2) + "+")
+        print("\n".join(lines))
 
-    print("=== PHASE 1: LEXICAL ANALYSIS ===")
-    print("Tokens (type, value, line:column):")
-    print(result["tokens"])
-    print()
+    print_box("PHASE 1: LEXICAL ANALYSIS - Tokens (type, value)", result["tokens"])
 
-    print("=== PHASE 2: SYNTAX ANALYSIS (AST) ===")
-    print("Abstract Syntax Tree (JSON):")
-    print(result["ast"])
-    print()
+    print_box("PHASE 2: SYNTAX ANALYSIS (AST)", result["ast"])
 
-    print("=== PHASE 3: INTERMEDIATE REPRESENTATION (3-address code) ===")
-    print("Generated IR:")
-    print(result["ir"])
-    print()
+    print_box("SYMBOL TABLE", result.get("symbols", "(no symbols)"))
 
-    print("=== PHASE 4: OPTIMIZATION ===")
-    print("Optimized IR (constant folding applied):")
-    print(result["optimized_ir"])
-    print()
+    print_box("PHASE 3: INTERMEDIATE REPRESENTATION (3-address code)", result["ir"])
 
-    print("=== PHASE 5: TARGET CODE GENERATION ===")
-    print("Pseudo-assembly:")
-    print(result["assembly"])
-    print()
+    print_box("PHASE 4: OPTIMIZATION - Optimized IR (constant folding applied)", result["optimized_ir"])
 
-    print("Equivalent Python code:")
-    print(result["python"])
-    print()
-    print("=== PHASE 6: RUN GENERATED PYTHON ===")
+    print_box("PHASE 5: TARGET CODE GENERATION - Pseudo-assembly", result["assembly"])
+
+    print_box("PHASE 5: TARGET CODE GENERATION - Equivalent Python code", result["python"])
+
+    print_box("PHASE 6: RUN GENERATED PYTHON", "")
     python_code = result["python"]
     try:
         buf = io.StringIO()
@@ -116,8 +131,7 @@ def main() -> int:
         with contextlib.redirect_stdout(buf):
             exec(python_code, exec_globals)
         program_output = buf.getvalue()
-        print("Program output:")
-        print(program_output if program_output else "(no output)")
+        print_box("Program output", program_output if program_output else "(no output)")
     except Exception:
         print("Runtime error while executing generated Python:")
         traceback.print_exc()

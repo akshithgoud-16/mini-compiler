@@ -73,6 +73,8 @@ class Parser:
     def parse_statement(self):
         if self.match("NUMBER_KW"):
             return self.parse_declaration()
+        if self.match("ASK"):
+            return self.parse_ask()
         if self.match("ID") and self.tokens[self.position + 1].type == "ARROW":
             return self.parse_assignment()
         if self.match("WHEN"):
@@ -120,6 +122,24 @@ class Parser:
         self.consume("SAY", "Expected 'say'")
         expression = self.parse_expression()
         return PrintStatement(expression=expression)
+
+    def parse_ask(self) -> "AskStatement":
+        from .ast_nodes import AskStatement
+
+        self.consume("ASK", "Expected 'ask'")
+        prompt = None
+        # allow: ask "prompt" -> var   OR   ask var
+        if self.match("STRING"):
+            prompt = self.parse_primary()
+            if self.match("ARROW"):
+                self.advance()
+                name = self.consume("ID", "Expected variable name after '->'").value
+                return AskStatement(name=name or "", prompt=prompt)
+            # otherwise consume identifier next
+        if self.match("ID"):
+            name = self.consume("ID", "Expected variable name").value
+            return AskStatement(name=name or "", prompt=prompt)
+        raise ParserError("Invalid ask statement syntax")
 
     def parse_expression(self):
         return self.parse_or()

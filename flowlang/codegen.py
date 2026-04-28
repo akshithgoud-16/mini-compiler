@@ -36,6 +36,11 @@ class CodeGenerator:
             elif instruction.op == "ASSIGN":
                 lines.append(f"LOAD {instruction.result}, {instruction.arg1}")
                 lines.append(f"STORE {instruction.result}")
+            elif instruction.op == "READ":
+                if instruction.arg1:
+                    lines.append(f"READ_PROMPT {instruction.result}, {instruction.arg1}")
+                else:
+                    lines.append(f"READ {instruction.result}")
             elif instruction.op == "BINARY":
                 operator, right_operand = instruction.arg2.split(" ", 1)
                 mnemonic = self.operator_to_mnemonic(operator)
@@ -69,6 +74,12 @@ class CodeGenerator:
             for statement in node.body:
                 lines.extend(self._emit_python_statement(statement, indent_level + 1))
             return lines
+        if node.__class__.__name__ == "AskStatement":
+            name = getattr(node, "name")
+            prompt = getattr(node, "prompt", None)
+            if prompt is not None:
+                return [f"{indent}{name} = int(input({self._emit_python_expression(prompt)}))"]
+            return [f"{indent}{name} = int(input())"]
         raise TypeError(f"Unsupported statement type: {type(node).__name__}")
 
     def _emit_python_expression(self, node) -> str:

@@ -109,6 +109,15 @@ class IRGenerator:
             self.instructions.append(IRInstruction(op="GOTO", label=start_label))
             self.instructions.append(IRInstruction(op="LABEL", label=end_label))
             return
+        # AskStatement handling
+        if node.__class__.__name__ == "AskStatement":
+            name = getattr(node, "name", None)
+            prompt_node = getattr(node, "prompt", None)
+            prompt_val = None
+            if prompt_node is not None:
+                prompt_val = self.emit_expression(prompt_node)
+            self.instructions.append(IRInstruction(op="READ", result=name, arg1=prompt_val))
+            return
         raise TypeError(f"Unsupported AST node: {node.__class__.__name__}")
 
     def emit_expression(self, node) -> str:

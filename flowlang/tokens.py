@@ -19,10 +19,11 @@ class Token:
 KEYWORDS = {
     "when": "WHEN",
     "say": "SAY",
-    "start": "START",
-    "end": "END",
+    "START": "START",
+    "END": "END",
     "number": "NUMBER_KW",
     "stop": "STOP",
+    "ask": "ASK",
     "loop": "LOOP",
     "true": "TRUE",
     "false": "FALSE",

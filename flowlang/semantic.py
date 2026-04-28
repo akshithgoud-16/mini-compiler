@@ -55,6 +55,13 @@ class SemanticAnalyzer:
         if isinstance(node, PrintStatement):
             self.visit_expression(node.expression)
             return
+        if node.__class__.__name__ == "AskStatement":
+            # Ask assigns input to a variable; ensure the variable is declared
+            name = getattr(node, "name", None)
+            if name is None or name not in self.symbols:
+                raise SemanticError(f"Variable '{name}' used in ask before declaration")
+            # prompt may be a string node; that's fine
+            return
         raise SemanticError(f"Unsupported AST node: {node.__class__.__name__}")
 
     def visit_expression(self, node) -> None:
