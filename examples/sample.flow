@@ -1,0 +1,6 @@
+x -> 10
+y -> 20
+folded -> 10 + 20
+z -> x + y
+when z > 15:
+say z
