@@ -123,7 +123,6 @@ def main() -> int:
 
     print_box("PHASE 5: TARGET CODE GENERATION - Equivalent Python code", result["python"])
 
-    print_box("PHASE 6: RUN GENERATED PYTHON", "")
     python_code = result["python"]
     try:
         buf = io.StringIO()
